@@ -26,47 +26,63 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
+def _text_width(draw, text, font) -> int:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[2] - bbox[0]
+
+
+def _wrap_by_pixel(draw, text, font, max_width) -> list[str]:
+    """Wrap text so each line fits within max_width pixels."""
+    words = text.split()
+    if not words:
+        return [text]
+    lines: list[str] = []
+    current = words[0]
+    for word in words[1:]:
+        candidate = current + " " + word
+        if _text_width(draw, candidate, font) <= max_width:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    lines.append(current)
+    return lines
+
+
 def add_caption(image_bytes: bytes, caption: str, position: str = "bottom") -> bytes:
-    """
-    Add bold white text with black outline to image.
-    position: 'bottom' | 'top' | 'both' (top half + bottom half split by ' | ')
-    """
+    """Add bold white text with black outline to image."""
     img = Image.open(BytesIO(image_bytes)).convert("RGB")
     w, h = img.size
 
-    # Horizontal padding — text won't exceed this area
-    pad_x = int(w * 0.07)
+    pad_x = int(w * 0.08)
     max_text_w = w - pad_x * 2
 
-    # Font size: ~6% of height, smaller than before
-    font_size = max(24, min(int(h * 0.06), 62))
-    font = _load_font(font_size)
-
     draw = ImageDraw.Draw(img)
-
     caption = caption.upper()
 
-    # Wrap so no line exceeds max_text_w
-    max_chars = max(10, int(max_text_w / (font_size * 0.52)))
-    lines = textwrap.wrap(caption, width=max_chars) or [caption]
+    # Auto-shrink font until longest line fits the available width
+    font_size = max(24, min(int(h * 0.06), 58))
+    while font_size >= 18:
+        font = _load_font(font_size)
+        lines = _wrap_by_pixel(draw, caption, font, max_text_w)
+        longest = max((_text_width(draw, l, font) for l in lines), default=0)
+        if longest <= max_text_w:
+            break
+        font_size -= 2
+    else:
+        font = _load_font(font_size)
+        lines = _wrap_by_pixel(draw, caption, font, max_text_w)
 
     line_h = font_size + 10
     total_h = line_h * len(lines)
     margin_y = int(h * 0.04)
 
-    if position == "bottom":
-        y_start = h - total_h - margin_y
-    else:
-        y_start = margin_y
-
+    y_start = h - total_h - margin_y if position == "bottom" else margin_y
     outline = max(2, font_size // 20)
 
     for i, line in enumerate(lines):
-        bbox = draw.textbbox((0, 0), line, font=font)
-        text_w = bbox[2] - bbox[0]
+        text_w = _text_width(draw, line, font)
         x = (w - text_w) // 2
-        # Clamp inside padding
-        x = max(pad_x, min(x, w - pad_x - text_w))
         y = y_start + i * line_h
 
         for dx in range(-outline, outline + 1):
