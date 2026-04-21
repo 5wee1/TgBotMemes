@@ -36,6 +36,10 @@ class ImageProvider:
         """Returns URL of the generated image."""
         payload: dict = {
             "prompt": prompt,
+            "negative_prompt": (
+                "text, words, letters, numbers, watermark, signature, caption, "
+                "typography, font, label, title, subtitle, writing, inscription"
+            ),
             "image_size": "square_hd",
             "num_inference_steps": 8 if quality == "hd" else 4,
             "enable_safety_checker": True,

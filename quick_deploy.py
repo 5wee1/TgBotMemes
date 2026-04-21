@@ -1,0 +1,17 @@
+import paramiko, sys, time
+sys.stdout.reconfigure(encoding="utf-8")
+c = paramiko.SSHClient()
+c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+c.connect("85.198.97.76", 22, "root", "420218", timeout=15)
+def run(cmd):
+    _, o, e = c.exec_command(cmd)
+    out = o.read().decode("utf-8", errors="replace")
+    if out.strip(): print(out.rstrip())
+sftp = c.open_sftp()
+sftp.put("database/repository.py", "/opt/meme_bot/database/repository.py")
+print("uploaded repository.py")
+sftp.close()
+run("systemctl restart meme_bot")
+time.sleep(3)
+run("systemctl status meme_bot --no-pager")
+c.close()
