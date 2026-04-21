@@ -22,6 +22,27 @@ from utils.caption_generator import generate_caption, generate_image_prompt
 logger = logging.getLogger(__name__)
 router = Router()
 
+_STATUSES = [
+    "⏳ Генерирую мем...",
+    "🎨 Рисую картинку...",
+    "✍️ Придумываю подпись...",
+    "🔮 Магия происходит...",
+    "⚡ Почти готово...",
+    "🖼 Финальные штрихи...",
+]
+
+
+async def _animate_status(msg: Message, stop_event: asyncio.Event):
+    """Cycles through status messages until stop_event is set."""
+    i = 0
+    while not stop_event.is_set():
+        try:
+            await msg.edit_text(_STATUSES[i % len(_STATUSES)])
+        except Exception:
+            pass
+        i += 1
+        await asyncio.sleep(2)
+
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
@@ -66,6 +87,9 @@ async def _generate_and_send(
     await db.consume_generation(user_id, reason)
     meme_id = await db.save_meme(user_id, query, style_key, phash)
 
+    stop_event = asyncio.Event()
+    anim_task = asyncio.create_task(_animate_status(status_message, stop_event)) if status_message else None
+
     try:
         image_prompt, caption = await asyncio.gather(
             generate_image_prompt(query, style_key),
@@ -76,6 +100,7 @@ async def _generate_and_send(
         )
         image_bytes = add_caption(raw_bytes, caption)
     except ImageGenerationError as e:
+        if anim_task: stop_event.set(); anim_task.cancel()
         logger.error("ImageGenerationError user=%s: %s", user_id, e)
         text = "😔 Не удалось создать мем. Попробуй ещё раз или переформулируй запрос."
         if status_message:
@@ -83,6 +108,10 @@ async def _generate_and_send(
         else:
             await bot.send_message(chat_id, text)
         return None
+
+    if anim_task:
+        stop_event.set()
+        anim_task.cancel()
 
     tg_caption = f"<i>{query}</i>"
 
@@ -121,7 +150,7 @@ async def handle_text_input(message: Message, state: FSMContext, bot: Bot):
     db_user = await db.get_user(message.from_user.id)
     plan = db_user["plan"] if db_user else "free"
 
-    status = await message.answer("⏳ Генерирую мем…")
+    status = await message.answer(_STATUSES[0])
     await _generate_and_send(
         bot=bot,
         chat_id=message.chat.id,

@@ -9,16 +9,12 @@ def run(cmd):
     if out.strip(): print(out.rstrip())
 sftp = c.open_sftp()
 for local, remote in [
-    ("handlers/meme.py",           "/opt/meme_bot/handlers/meme.py"),
-    ("providers/image_provider.py","/opt/meme_bot/providers/image_provider.py"),
-    ("config.py",                  "/opt/meme_bot/config.py"),
+    ("handlers/meme.py",   "/opt/meme_bot/handlers/meme.py"),
+    ("utils/keyboards.py", "/opt/meme_bot/utils/keyboards.py"),
 ]:
     sftp.put(local, remote)
     print(f"uploaded {remote}")
 sftp.close()
-run("sed -i 's|IMAGE_MODEL=.*|IMAGE_MODEL=gpt-image-1.5|' /opt/meme_bot/.env")
-run("grep IMAGE_MODEL /opt/meme_bot/.env")
-run("/opt/meme_bot/venv/bin/pip install -q --upgrade openai")
 run("systemctl restart meme_bot")
 time.sleep(4)
 run("systemctl status meme_bot --no-pager")
