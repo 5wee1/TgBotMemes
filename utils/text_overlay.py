@@ -34,31 +34,39 @@ def add_caption(image_bytes: bytes, caption: str, position: str = "bottom") -> b
     img = Image.open(BytesIO(image_bytes)).convert("RGB")
     w, h = img.size
 
-    # Auto font size: ~8% of image height, capped
-    font_size = max(32, min(int(h * 0.08), 80))
+    # Horizontal padding — text won't exceed this area
+    pad_x = int(w * 0.07)
+    max_text_w = w - pad_x * 2
+
+    # Font size: ~6% of height, smaller than before
+    font_size = max(24, min(int(h * 0.06), 62))
     font = _load_font(font_size)
 
     draw = ImageDraw.Draw(img)
 
     caption = caption.upper()
-    max_chars = max(10, int(w / (font_size * 0.55)))
+
+    # Wrap so no line exceeds max_text_w
+    max_chars = max(10, int(max_text_w / (font_size * 0.52)))
     lines = textwrap.wrap(caption, width=max_chars) or [caption]
 
-    line_h = font_size + 8
+    line_h = font_size + 10
     total_h = line_h * len(lines)
-    margin = int(h * 0.03)
+    margin_y = int(h * 0.04)
 
     if position == "bottom":
-        y_start = h - total_h - margin
+        y_start = h - total_h - margin_y
     else:
-        y_start = margin
+        y_start = margin_y
 
-    outline = max(2, font_size // 18)
+    outline = max(2, font_size // 20)
 
     for i, line in enumerate(lines):
         bbox = draw.textbbox((0, 0), line, font=font)
         text_w = bbox[2] - bbox[0]
         x = (w - text_w) // 2
+        # Clamp inside padding
+        x = max(pad_x, min(x, w - pad_x - text_w))
         y = y_start + i * line_h
 
         for dx in range(-outline, outline + 1):
