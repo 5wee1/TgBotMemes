@@ -1,0 +1,17 @@
+[Unit]
+Description=Telegram Meme Bot
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/meme_bot
+ExecStart=/opt/meme_bot/venv/bin/python bot.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+EnvironmentFile=/opt/meme_bot/.env
+
+[Install]
+WantedBy=multi-user.target
