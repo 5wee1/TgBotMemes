@@ -89,6 +89,8 @@ async def set_plan(user_id: int, plan: str, credits: int):
 
 async def can_generate(user_id: int) -> tuple[bool, str]:
     """Returns (allowed, reason). Resets daily counter if needed."""
+    if user_id in config.admin_ids:
+        return True, "admin"
     async with aiosqlite.connect(config.db_path) as db:
         db.row_factory = aiosqlite.Row
         row = await (await db.execute("SELECT * FROM users WHERE user_id=?", (user_id,))).fetchone()
@@ -115,6 +117,8 @@ async def can_generate(user_id: int) -> tuple[bool, str]:
 
 
 async def consume_generation(user_id: int, reason: str):
+    if reason == "admin":
+        return
     async with aiosqlite.connect(config.db_path) as db:
         if reason == "free":
             await db.execute("UPDATE users SET daily_free_used=daily_free_used+1 WHERE user_id=?", (user_id,))
