@@ -3,12 +3,12 @@ import random
 from typing import Optional
 
 STYLES: dict[str, dict] = {
-    "classic":    {"label": "😂 Классика",      "desc": "classic internet meme, bold Impact font, top and bottom caption"},
-    "shitpost":   {"label": "🤡 Шитпост",       "desc": "absurdist shitpost meme, chaotic, surreal, weird humor"},
-    "sarcasm":    {"label": "😈 Сарказм",        "desc": "sarcastic meme, dark humor, ironic expression"},
-    "smart":      {"label": "🧠 Умный/Ироничный","desc": "intellectual ironic meme, witty, sophisticated humor"},
-    "marketing":  {"label": "💼 Маркетинг",      "desc": "viral marketing meme, relatable, branded, professional look"},
-    "random":     {"label": "🎲 Случайный",      "desc": None},
+    "classic":    {"label": "😂 Классика",       "desc": "classic internet meme scene, expressive characters, bold visual humor"},
+    "shitpost":   {"label": "🤡 Шитпост",        "desc": "absurdist surreal shitpost meme, chaotic weird imagery, low effort aesthetic"},
+    "sarcasm":    {"label": "😈 Сарказм",         "desc": "sarcastic dark humor scene, ironic expression, deadpan reaction face"},
+    "smart":      {"label": "🧠 Умный/Ироничный", "desc": "intellectual ironic scene, sophisticated visual metaphor, witty imagery"},
+    "marketing":  {"label": "💼 Маркетинг",       "desc": "viral marketing meme scene, relatable situation, clean professional look"},
+    "random":     {"label": "🎲 Случайный",       "desc": None},
 }
 
 _QUALITY_MAP = {
@@ -20,7 +20,7 @@ _QUALITY_MAP = {
 
 
 def build_prompt(query: str, style_key: str, variant_seed: Optional[int] = None, plan: str = "free") -> tuple[str, int, str]:
-    """Returns (prompt, seed, quality)."""
+    """Returns (prompt, seed, quality). Prompt has NO text — caption is overlaid via Pillow."""
     if style_key == "random":
         real_style = random.choice([k for k in STYLES if k != "random"])
     else:
@@ -31,12 +31,11 @@ def build_prompt(query: str, style_key: str, variant_seed: Optional[int] = None,
     quality = _QUALITY_MAP.get(plan, "standard")
 
     prompt = (
-        f"Create a funny meme image. Style: {style_desc}. "
-        f'Caption in Russian: "{query}". '
-        "Make the caption large, bold, highly readable. "
-        "High contrast background, clean typography, no watermarks. "
-        "meme format, funny, clear message. "
-        "safe for work, no gore, no explicit content."
+        f"Funny meme image, no text, no words, no letters anywhere. "
+        f"Style: {style_desc}. "
+        f"Theme: {query}. "
+        f"Expressive faces, high contrast, clean composition, meme aesthetic. "
+        f"Safe for work, no explicit content."
     )
     return prompt, seed, quality
 

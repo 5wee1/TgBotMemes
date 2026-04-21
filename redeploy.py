@@ -23,8 +23,7 @@ for f in [
     sftp.put(f[0], f[1])
 sftp.close()
 
-# Update FREE_DAILY_LIMIT in .env on server
-run("sed -i 's/FREE_DAILY_LIMIT=.*/FREE_DAILY_LIMIT=5/' /opt/meme_bot/.env")
+run("sed -i 's/FREE_DAILY_LIMIT=.*/FREE_DAILY_LIMIT=3/' /opt/meme_bot/.env")
 run("systemctl restart meme_bot")
 time.sleep(3)
 run("systemctl status meme_bot --no-pager")

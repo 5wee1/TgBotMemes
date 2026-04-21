@@ -1,6 +1,7 @@
 """
-Image generation provider — swap this file to change the backend.
-Implement generate_image() and the rest of the bot stays unchanged.
+Image provider — fal.ai Flux Schnell.
+Generates image without caption text; text is overlaid via Pillow.
+Swap this file to change the backend.
 """
 import asyncio
 import logging
@@ -12,6 +13,8 @@ from config import config
 
 logger = logging.getLogger(__name__)
 
+FAL_URL = "https://fal.run/fal-ai/flux/schnell"
+
 
 class ImageGenerationError(Exception):
     pass
@@ -19,26 +22,29 @@ class ImageGenerationError(Exception):
 
 class ImageProvider:
     def __init__(self):
-        self.base_url = config.image_api_base_url.rstrip("/")
         self.api_key = config.image_api_key
-        self.model = config.image_model
         self.timeout = config.timeout_seconds
         self.retries = config.retries
 
     async def generate_image(
         self,
         prompt: str,
-        size: str = "1024x1024",
+        size: str = "square_hd",
         seed: Optional[int] = None,
         quality: str = "standard",
     ) -> str:
-        """
-        Returns a URL (or base64 data URI) of the generated image.
-        Raises ImageGenerationError on failure after retries.
-        """
-        payload = self._build_payload(prompt, size, seed, quality)
+        """Returns URL of the generated image."""
+        payload: dict = {
+            "prompt": prompt,
+            "image_size": "square_hd",
+            "num_inference_steps": 8 if quality == "hd" else 4,
+            "enable_safety_checker": True,
+        }
+        if seed is not None:
+            payload["seed"] = seed
+
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Key {self.api_key}",
             "Content-Type": "application/json",
         }
 
@@ -46,54 +52,26 @@ class ImageProvider:
         for attempt in range(self.retries + 1):
             try:
                 async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    resp = await client.post(
-                        f"{self.base_url}/images/generations",
-                        json=payload,
-                        headers=headers,
-                    )
+                    resp = await client.post(FAL_URL, json=payload, headers=headers)
                     resp.raise_for_status()
-                    return self._parse_response(resp.json())
+                    data = resp.json()
+                    images = data.get("images", [])
+                    if not images:
+                        raise ImageGenerationError("Empty images list from fal.ai")
+                    return images[0]["url"]
             except httpx.HTTPStatusError as e:
                 last_error = e
-                logger.warning("ImageAPI HTTP %s attempt %d/%d", e.response.status_code, attempt + 1, self.retries + 1)
+                logger.warning("fal.ai HTTP %s attempt %d/%d", e.response.status_code, attempt + 1, self.retries + 1)
                 if e.response.status_code in (400, 401, 403):
-                    break  # non-retryable
+                    break
             except Exception as e:
                 last_error = e
-                logger.warning("ImageAPI error attempt %d/%d: %s", attempt + 1, self.retries + 1, e)
+                logger.warning("fal.ai error attempt %d/%d: %s", attempt + 1, self.retries + 1, e)
 
             if attempt < self.retries:
                 await asyncio.sleep(2 ** attempt)
 
         raise ImageGenerationError(f"Failed after {self.retries + 1} attempts: {last_error}") from last_error
 
-    def _build_payload(self, prompt: str, size: str, seed: Optional[int], quality: str) -> dict:
-        payload: dict = {
-            "model": self.model,
-            "prompt": prompt,
-            "n": 1,
-            "size": size,
-        }
-        # OpenAI-compatible quality param
-        if quality in ("standard", "hd"):
-            payload["quality"] = quality
-        # Some APIs accept seed
-        if seed is not None:
-            payload["seed"] = seed
-        return payload
 
-    def _parse_response(self, data: dict) -> str:
-        # OpenAI-compatible: data.data[0].url or b64_json
-        items = data.get("data", [])
-        if not items:
-            raise ImageGenerationError("Empty response from image API")
-        item = items[0]
-        if "url" in item:
-            return item["url"]
-        if "b64_json" in item:
-            return "data:image/png;base64," + item["b64_json"]
-        raise ImageGenerationError(f"Unexpected response format: {list(item.keys())}")
-
-
-# Singleton
 image_provider = ImageProvider()
