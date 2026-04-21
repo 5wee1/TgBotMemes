@@ -81,17 +81,33 @@ async def pre_checkout(query: PreCheckoutQuery):
 @router.message(F.successful_payment)
 async def successful_payment(message: Message):
     payment = message.successful_payment
+    user_id = message.from_user.id
+
     try:
         payload = json.loads(payment.invoice_payload)
     except Exception:
         logger.error("Bad payment payload: %s", payment.invoice_payload)
+        await message.answer("⚠️ Ошибка обработки платежа. Напиши в поддержку.")
+        return
+
+    # Validate payload user matches actual payer
+    payload_uid = payload.get("user_id")
+    if payload_uid and payload_uid != user_id:
+        logger.error("Payment user mismatch: payload=%s actual=%s", payload_uid, user_id)
+        await message.answer("⚠️ Ошибка платежа: несоответствие пользователя. Напиши в поддержку.")
         return
 
     plan_key = payload.get("plan_key", "")
-    user_id = message.from_user.id
     plan_info = PLANS.get(plan_key)
     if not plan_info:
+        logger.error("Unknown plan_key in payment: %s", plan_key)
+        await message.answer("⚠️ Неизвестный тип пакета. Напиши в поддержку.")
         return
+
+    # Ensure user exists in DB before crediting
+    existing = await db.get_user(user_id)
+    if not existing:
+        await db.get_or_create_user(user_id, message.from_user.username)
 
     payment_id = await db.create_payment(
         user_id=user_id,
@@ -111,10 +127,15 @@ async def successful_payment(message: Message):
         "plan_key": plan_key,
         "credits": plan_info["credits"],
         "amount": payment.total_amount,
+        "charge_id": payment.telegram_payment_charge_id,
     })
+
+    user = await db.get_user(user_id)
+    balance = user["credits_balance"] if user else plan_info["credits"]
 
     await message.answer(
         f"✅ Оплата прошла! Начислено <b>{plan_info['credits']}</b> генераций.\n"
+        f"Баланс: <b>{balance}</b> ген.\n\n"
         "Приятного мемотворчества! 🎉",
         parse_mode="HTML",
         reply_markup=main_menu_kb(),

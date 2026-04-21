@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 import string
 import aiosqlite
@@ -7,6 +8,8 @@ from typing import Optional
 
 from config import config
 from database.models import CREATE_TABLES_SQL
+
+logger = logging.getLogger(__name__)
 
 
 async def get_db() -> aiosqlite.Connection:
@@ -74,7 +77,11 @@ async def _add_credits(db: aiosqlite.Connection, user_id: int, amount: int):
 
 async def add_credits(user_id: int, amount: int):
     async with aiosqlite.connect(config.db_path) as db:
-        await _add_credits(db, user_id, amount)
+        cursor = await db.execute(
+            "UPDATE users SET credits_balance=credits_balance+? WHERE user_id=?", (amount, user_id)
+        )
+        if cursor.rowcount == 0:
+            logger.error("add_credits: user %s not found — credits not added!", user_id)
         await db.commit()
 
 
@@ -107,13 +114,16 @@ async def can_generate(user_id: int) -> tuple[bool, str]:
             )
             await db.commit()
             user["daily_free_used"] = 0
+        # Paid credits take priority regardless of plan
+        if user["credits_balance"] > 0:
+            return True, "credits"
+        # Free daily allowance (only if no paid credits left)
         if user["plan"] == "free":
             if user["daily_free_used"] >= config.free_daily_limit:
                 return False, "daily_limit"
             return True, "free"
-        if user["credits_balance"] <= 0:
-            return False, "no_credits"
-        return True, "credits"
+        # Subscriber ran out of credits
+        return False, "no_credits"
 
 
 async def consume_generation(user_id: int, reason: str):
