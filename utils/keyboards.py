@@ -42,12 +42,12 @@ def meme_actions_kb(meme_id: int, is_favorite: bool = False) -> InlineKeyboardMa
 
 def plans_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔹 Starter — 300 ген/мес · 299 ₽", callback_data="buy:starter")],
-        [InlineKeyboardButton(text="🔷 Pro — 1500 ген/мес · 799 ₽", callback_data="buy:pro")],
-        [InlineKeyboardButton(text="💎 Ultra — Fair-use · 1499 ₽/мес", callback_data="buy:ultra")],
-        [InlineKeyboardButton(text="📦 50 генераций · 500 ₽", callback_data="buy:pack50")],
-        [InlineKeyboardButton(text="📦 200 генераций · 1000 ₽", callback_data="buy:pack200")],
-        [InlineKeyboardButton(text="❌ Назад", callback_data="cancel")],
+        [InlineKeyboardButton(text="🔹 Starter — 300 ген/мес · 199 ⭐", callback_data="buy:starter")],
+        [InlineKeyboardButton(text="🔷 Pro — 1500 ген/мес · 599 ⭐", callback_data="buy:pro")],
+        [InlineKeyboardButton(text="💎 Ultra — безлимит · 999 ⭐/мес", callback_data="buy:ultra")],
+        [InlineKeyboardButton(text="📦 50 генераций · 75 ⭐", callback_data="buy:pack50")],
+        [InlineKeyboardButton(text="📦 200 генераций · 249 ⭐", callback_data="buy:pack200")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="main_menu")],
     ])
 
 

@@ -14,12 +14,18 @@ from utils.keyboards import plans_kb, main_menu_kb
 logger = logging.getLogger(__name__)
 router = Router()
 
+# Prices in Telegram Stars (XTR). Logic: bigger volume = cheaper per gen.
+# Pack 50:   75 ⭐ = 1.50 ⭐/gen
+# Pack 200: 249 ⭐ = 1.25 ⭐/gen
+# Starter:  199 ⭐ = 0.66 ⭐/gen  (300/mo)
+# Pro:      599 ⭐ = 0.40 ⭐/gen  (1500/mo)
+# Ultra:    999 ⭐ fair-use
 PLANS = {
-    "starter":  {"title": "Starter — 300 генераций/мес",   "credits": 300,   "price": 29900,  "plan": "starter"},
-    "pro":      {"title": "Pro — 1500 генераций/мес",       "credits": 1500,  "price": 79900,  "plan": "pro"},
-    "ultra":    {"title": "Ultra — Fair-use безлимит",      "credits": 10000, "price": 149900, "plan": "ultra"},
-    "pack50":   {"title": "Пакет 50 генераций",             "credits": 50,    "price": 50000,  "plan": None},
-    "pack200":  {"title": "Пакет 200 генераций",            "credits": 200,   "price": 100000, "plan": None},
+    "starter":  {"title": "Starter — 300 ген/мес",  "credits": 300,   "stars": 199,  "plan": "starter"},
+    "pro":      {"title": "Pro — 1500 ген/мес",      "credits": 1500,  "stars": 599,  "plan": "pro"},
+    "ultra":    {"title": "Ultra — безлимит",        "credits": 10000, "stars": 999,  "plan": "ultra"},
+    "pack50":   {"title": "Пакет 50 генераций",      "credits": 50,    "stars": 75,   "plan": None},
+    "pack200":  {"title": "Пакет 200 генераций",     "credits": 200,   "stars": 249,  "plan": None},
 }
 
 
@@ -28,13 +34,15 @@ PLANS = {
 async def show_plans(event):
     text = (
         "⚡ <b>Пакеты и подписки</b>\n\n"
-        "🆓 <b>Free:</b> 3 мема в день\n"
-        "🔹 <b>Starter:</b> 300 ген/мес — 299 ₽\n"
-        "🔷 <b>Pro:</b> 1500 ген/мес + HD — 799 ₽\n"
-        "💎 <b>Ultra:</b> Fair-use + HD — 1499 ₽/мес\n\n"
-        "📦 <b>Пакеты разовые:</b>\n"
-        "• 50 генераций — 500 ₽\n"
-        "• 200 генераций — 1000 ₽"
+        f"🆓 <b>Free:</b> {config.free_daily_limit} мемов в день\n\n"
+        "<b>Подписки (мес):</b>\n"
+        "🔹 <b>Starter</b> — 300 ген · 199 ⭐\n"
+        "🔷 <b>Pro</b> — 1500 ген + HD · 599 ⭐\n"
+        "💎 <b>Ultra</b> — безлимит + HD · 999 ⭐\n\n"
+        "<b>Разовые пакеты:</b>\n"
+        "📦 50 генераций · 75 ⭐\n"
+        "📦 200 генераций · 249 ⭐\n\n"
+        "<i>Оплата через Telegram Stars ⭐</i>"
     )
     if isinstance(event, Message):
         await event.answer(text, parse_mode="HTML", reply_markup=plans_kb())
@@ -51,19 +59,15 @@ async def handle_buy(call: CallbackQuery, bot: Bot):
         await call.answer("Неизвестный план.", show_alert=True)
         return
 
-    if not config.payment_provider_token:
-        await call.answer("Оплата временно недоступна.", show_alert=True)
-        return
-
     payload = json.dumps({"plan_key": plan_key, "user_id": call.from_user.id})
     await bot.send_invoice(
         chat_id=call.message.chat.id,
         title=plan["title"],
         description=f"Зачисление {plan['credits']} генераций на ваш аккаунт.",
         payload=payload,
-        provider_token=config.payment_provider_token,
-        currency="RUB",
-        prices=[LabeledPrice(label=plan["title"], amount=plan["price"])],
+        provider_token="",
+        currency="XTR",
+        prices=[LabeledPrice(label=plan["title"], amount=plan["stars"])],
         start_parameter=f"buy_{plan_key}",
     )
     await call.answer()

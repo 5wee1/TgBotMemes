@@ -17,7 +17,7 @@ class Config:
         int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()
     ])
     db_path: str = field(default_factory=lambda: os.getenv("DB_PATH", "memes.db"))
-    free_daily_limit: int = field(default_factory=lambda: int(os.getenv("FREE_DAILY_LIMIT", "3")))
+    free_daily_limit: int = field(default_factory=lambda: int(os.getenv("FREE_DAILY_LIMIT", "5")))
     rate_limit_seconds: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_SECONDS", "10")))
     max_concurrent_per_user: int = field(default_factory=lambda: int(os.getenv("MAX_CONCURRENT_PER_USER", "2")))
     payment_provider_token: str = field(default_factory=lambda: os.getenv("PAYMENT_PROVIDER_TOKEN", ""))
