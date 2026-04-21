@@ -56,12 +56,13 @@ async def generate_image_prompt(query: str, style: str) -> str:
     """Generate a detailed English image prompt for fal.ai."""
     hint = STYLE_HINTS.get(style, "")
     system = (
-        "You are an expert at writing image generation prompts for meme images. "
-        "Write a detailed English prompt describing a VISUAL SCENE — no text, no words in the image. "
-        "Focus on: characters, expressions, setting, mood, composition. "
-        "Max 80 words. Do not include any text/caption instructions."
+        "You write image prompts for an AI image generator. "
+        "Describe a funny VISUAL SCENE only — characters, expressions, setting, mood, lighting, composition. "
+        "STRICT RULES: never use words 'meme', 'text', 'caption', 'font', 'write', 'word'. "
+        "The scene must contain ZERO text, signs, letters or readable symbols. "
+        "Write in English. Max 70 words."
     )
-    user = f"Meme topic (in Russian): «{query}». Style: {hint}. Write the image prompt."
+    user = f"Topic (Russian): «{query}». Humor style: {hint}. Describe the visual scene."
 
     try:
         resp = await _get_client().chat.completions.create(

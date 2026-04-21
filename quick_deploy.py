@@ -8,10 +8,15 @@ def run(cmd):
     out = o.read().decode("utf-8", errors="replace")
     if out.strip(): print(out.rstrip())
 sftp = c.open_sftp()
-sftp.put("database/repository.py", "/opt/meme_bot/database/repository.py")
-print("uploaded repository.py")
+for local, remote in [
+    ("handlers/meme.py",           "/opt/meme_bot/handlers/meme.py"),
+    ("providers/image_provider.py","/opt/meme_bot/providers/image_provider.py"),
+    ("utils/caption_generator.py", "/opt/meme_bot/utils/caption_generator.py"),
+]:
+    sftp.put(local, remote)
+    print(f"uploaded {remote}")
 sftp.close()
 run("systemctl restart meme_bot")
-time.sleep(3)
+time.sleep(4)
 run("systemctl status meme_bot --no-pager")
 c.close()

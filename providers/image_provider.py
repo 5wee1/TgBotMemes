@@ -38,10 +38,11 @@ class ImageProvider:
             "prompt": prompt,
             "negative_prompt": (
                 "text, words, letters, numbers, watermark, signature, caption, "
-                "typography, font, label, title, subtitle, writing, inscription"
+                "typography, font, label, title, subtitle, writing, inscription, "
+                "speech bubble, dialog, headline, any readable characters"
             ),
             "image_size": "square_hd",
-            "num_inference_steps": 8 if quality == "hd" else 4,
+            "num_inference_steps": 12 if quality == "hd" else 8,
             "enable_safety_checker": True,
         }
         if seed is not None:
