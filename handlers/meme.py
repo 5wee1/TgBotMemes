@@ -17,6 +17,7 @@ from utils.content_filter import is_blocked
 from utils.keyboards import styles_kb, meme_actions_kb, main_menu_kb
 from utils.prompt_builder import build_prompt, prompt_hash, STYLES, get_style_label
 from utils.text_overlay import add_caption
+from utils.caption_generator import generate_caption
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -66,13 +67,12 @@ async def _generate_and_send(
     meme_id = await db.save_meme(user_id, query, style_key, phash)
 
     try:
-        image_url = await image_provider.generate_image(
-            prompt=prompt,
-            seed=used_seed,
-            quality=quality,
+        (image_url, caption) = await asyncio.gather(
+            image_provider.generate_image(prompt=prompt, seed=used_seed, quality=quality),
+            generate_caption(query, style_key),
         )
         raw_bytes = await _download_image(image_url)
-        image_bytes = add_caption(raw_bytes, query)
+        image_bytes = add_caption(raw_bytes, caption)
     except ImageGenerationError as e:
         logger.error("ImageGenerationError user=%s: %s", user_id, e)
         text = "😔 Не удалось создать мем. Попробуй ещё раз или переформулируй запрос."

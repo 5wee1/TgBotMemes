@@ -21,6 +21,7 @@ class Config:
     rate_limit_seconds: int = field(default_factory=lambda: int(os.getenv("RATE_LIMIT_SECONDS", "10")))
     max_concurrent_per_user: int = field(default_factory=lambda: int(os.getenv("MAX_CONCURRENT_PER_USER", "2")))
     payment_provider_token: str = field(default_factory=lambda: os.getenv("PAYMENT_PROVIDER_TOKEN", ""))
+    openai_api_key: str = field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
 
 
 config = Config()
