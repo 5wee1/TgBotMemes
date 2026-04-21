@@ -17,7 +17,7 @@ from utils.content_filter import is_blocked
 from utils.keyboards import meme_actions_kb, main_menu_kb
 from utils.prompt_builder import build_prompt, prompt_hash
 from utils.text_overlay import add_caption
-from utils.caption_generator import generate_caption, generate_image_prompt, _web_search_context
+from utils.caption_generator import generate_meme_content, _web_search_context
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -92,10 +92,7 @@ async def _generate_and_send(
 
     try:
         context = await _web_search_context(query)
-        image_prompt, caption = await asyncio.gather(
-            generate_image_prompt(query, style_key, context),
-            generate_caption(query, style_key, context),
-        )
+        caption, image_prompt = await generate_meme_content(query, style_key, context)
         raw_bytes = await image_provider.generate_image(
             prompt=image_prompt, seed=used_seed, quality=quality
         )
