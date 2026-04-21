@@ -71,10 +71,9 @@ async def _generate_and_send(
             generate_image_prompt(query, style_key),
             generate_caption(query, style_key),
         )
-        image_url = await image_provider.generate_image(
+        raw_bytes = await image_provider.generate_image(
             prompt=image_prompt, seed=used_seed, quality=quality
         )
-        raw_bytes = await _download_image(image_url)
         image_bytes = add_caption(raw_bytes, caption)
     except ImageGenerationError as e:
         logger.error("ImageGenerationError user=%s: %s", user_id, e)

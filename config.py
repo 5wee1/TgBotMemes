@@ -10,7 +10,7 @@ class Config:
     bot_token: str = field(default_factory=lambda: os.environ["BOT_TOKEN"])
     image_api_base_url: str = field(default_factory=lambda: os.environ["IMAGE_API_BASE_URL"])
     image_api_key: str = field(default_factory=lambda: os.environ["IMAGE_API_KEY"])
-    image_model: str = field(default_factory=lambda: os.getenv("IMAGE_MODEL", "dall-e-3"))
+    image_model: str = field(default_factory=lambda: os.getenv("IMAGE_MODEL", "gpt-image-1.5"))
     timeout_seconds: int = field(default_factory=lambda: int(os.getenv("TIMEOUT_SECONDS", "90")))
     retries: int = field(default_factory=lambda: int(os.getenv("RETRIES", "2")))
     admin_ids: list[int] = field(default_factory=lambda: [
