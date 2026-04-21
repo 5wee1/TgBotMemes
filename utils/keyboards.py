@@ -4,12 +4,11 @@ from utils.prompt_builder import STYLES
 
 def main_menu_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎨 Выбрать стиль", callback_data="show_styles"),
-         InlineKeyboardButton(text="⚡ Пакеты/Подписка", callback_data="show_plans")],
-        [InlineKeyboardButton(text="🧰 Мои мемы", callback_data="my_memes"),
-         InlineKeyboardButton(text="⭐ Избранное", callback_data="favorites")],
-        [InlineKeyboardButton(text="🔗 Реферальная ссылка", callback_data="referral"),
-         InlineKeyboardButton(text="🆘 Помощь", callback_data="help")],
+        [InlineKeyboardButton(text="⚡ Пакеты/Подписка", callback_data="show_plans"),
+         InlineKeyboardButton(text="🧰 Мои мемы", callback_data="my_memes")],
+        [InlineKeyboardButton(text="⭐ Избранное", callback_data="favorites"),
+         InlineKeyboardButton(text="🔗 Реферал", callback_data="referral")],
+        [InlineKeyboardButton(text="🆘 Помощь", callback_data="help")],
     ])
 
 
@@ -30,12 +29,13 @@ def styles_kb(query: str) -> InlineKeyboardMarkup:
 def meme_actions_kb(meme_id: int, is_favorite: bool = False) -> InlineKeyboardMarkup:
     fav_text = "💛 В избранном" if is_favorite else "✅ В избранное"
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔁 Ещё 1", callback_data=f"regen:1:{meme_id}")],
-        [InlineKeyboardButton(text="✏️ Изменить идею", callback_data=f"edit_idea:{meme_id}"),
-         InlineKeyboardButton(text="🧩 Серия из 5", callback_data=f"series:{meme_id}")],
-        [InlineKeyboardButton(text=fav_text, callback_data=f"fav:{meme_id}"),
-         InlineKeyboardButton(text="📤 Поделиться", callback_data=f"share:{meme_id}")],
-        [InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{meme_id}")],
+        [InlineKeyboardButton(text="🔁 Ещё 1", callback_data=f"regen:1:{meme_id}"),
+         InlineKeyboardButton(text="✏️ Изменить идею", callback_data=f"edit_idea:{meme_id}")],
+        [InlineKeyboardButton(text="🧩 Серия из 5", callback_data=f"series:{meme_id}"),
+         InlineKeyboardButton(text=fav_text, callback_data=f"fav:{meme_id}")],
+        [InlineKeyboardButton(text="📤 Поделиться", callback_data=f"share:{meme_id}"),
+         InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{meme_id}")],
+        [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")],
     ])
 
 

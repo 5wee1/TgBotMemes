@@ -14,8 +14,8 @@ from database import repository as db
 from handlers.states import MemeGen
 from providers.image_provider import image_provider, ImageGenerationError
 from utils.content_filter import is_blocked
-from utils.keyboards import styles_kb, meme_actions_kb, main_menu_kb
-from utils.prompt_builder import build_prompt, prompt_hash, STYLES, get_style_label
+from utils.keyboards import meme_actions_kb, main_menu_kb
+from utils.prompt_builder import build_prompt, prompt_hash
 from utils.text_overlay import add_caption
 from utils.caption_generator import generate_caption, generate_image_prompt
 
@@ -84,8 +84,7 @@ async def _generate_and_send(
             await bot.send_message(chat_id, text)
         return None
 
-    style_label = get_style_label(style_key)
-    caption = f"<b>{style_label}</b>  |  <i>{query}</i>"
+    tg_caption = f"<i>{query}</i>"
 
     if status_message:
         try:
@@ -96,7 +95,7 @@ async def _generate_and_send(
     sent = await bot.send_photo(
         chat_id=chat_id,
         photo=BufferedInputFile(image_bytes, filename="meme.png"),
-        caption=caption,
+        caption=tg_caption,
         parse_mode="HTML",
         reply_markup=meme_actions_kb(meme_id),
     )
@@ -106,10 +105,10 @@ async def _generate_and_send(
     return meme_id
 
 
-# ── text input → style picker ──────────────────────────────────────────────
+# ── text input → immediate generation ─────────────────────────────────────
 
 @router.message(F.text & ~F.text.startswith("/"))
-async def handle_text_input(message: Message, state: FSMContext):
+async def handle_text_input(message: Message, state: FSMContext, bot: Bot):
     query = message.text.strip()
     if not query:
         return
@@ -118,41 +117,20 @@ async def handle_text_input(message: Message, state: FSMContext):
         await message.answer("🚫 Не могу сгенерировать это. Сформулируй иначе.")
         return
 
-    await state.set_state(MemeGen.waiting_style)
-    await state.update_data(query=query)
-    await message.answer(
-        f"🎨 Выбери стиль для мема:\n<i>{query}</i>",
-        parse_mode="HTML",
-        reply_markup=styles_kb(query),
-    )
-
-
-# ── style selected ─────────────────────────────────────────────────────────
-
-@router.callback_query(F.data.startswith("style:"))
-async def handle_style_choice(call: CallbackQuery, state: FSMContext, bot: Bot):
-    _, style_key, query_short = call.data.split(":", 2)
-
-    fsm_data = await state.get_data()
-    query = fsm_data.get("query", query_short)
     await state.clear()
-
-    user = call.from_user
-    db_user = await db.get_user(user.id)
+    db_user = await db.get_user(message.from_user.id)
     plan = db_user["plan"] if db_user else "free"
 
-    await call.message.edit_text(f"⏳ Генерирую мем…\n<i>{query}</i>", parse_mode="HTML")
-
+    status = await message.answer("⏳ Генерирую мем…")
     await _generate_and_send(
         bot=bot,
-        chat_id=call.message.chat.id,
-        user_id=user.id,
+        chat_id=message.chat.id,
+        user_id=message.from_user.id,
         query=query,
-        style_key=style_key,
+        style_key="random",
         plan=plan,
-        status_message=call.message,
+        status_message=status,
     )
-    await call.answer()
 
 
 # ── regen ──────────────────────────────────────────────────────────────────
