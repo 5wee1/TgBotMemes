@@ -34,7 +34,7 @@ PLANS = {
 async def show_plans(event):
     text = (
         "⚡ <b>Пакеты и подписки</b>\n\n"
-        f"🆓 <b>Free:</b> {config.free_daily_limit} мемов в день\n\n"
+        "🆓 <b>Free:</b> 3 мема в день\n\n"
         "<b>Подписки (мес):</b>\n"
         "🔹 <b>Starter</b> — 300 ген · 199 ⭐\n"
         "🔷 <b>Pro</b> — 1500 ген + HD · 599 ⭐\n"

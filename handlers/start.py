@@ -47,7 +47,7 @@ async def cmd_help(message: Message):
         "/plans — пакеты и подписки\n"
         "/referral — моя реферальная ссылка\n"
         "/help — эта справка\n\n"
-        "<b>Лимиты (Free):</b> 5 мемов в день\n"
+        "<b>Лимиты (Free):</b> 3 мема в день\n"
         "Купи пакет или подписку для большего 🚀"
     )
     await message.answer(text, parse_mode="HTML", reply_markup=main_menu_kb())
