@@ -241,42 +241,6 @@ async def handle_new_idea(message: Message, state: FSMContext, bot: Bot):
     )
 
 
-# ── series ─────────────────────────────────────────────────────────────────
-
-@router.callback_query(F.data.startswith("series:"))
-async def handle_series(call: CallbackQuery, bot: Bot):
-    meme_id = int(call.data.split(":")[1])
-    user_id = call.from_user.id
-
-    memes = await db.get_user_memes(user_id, limit=50)
-    source = next((m for m in memes if m["id"] == meme_id), None)
-    if not source:
-        await call.answer("Мем не найден.", show_alert=True)
-        return
-
-    db_user = await db.get_user(user_id)
-    plan = db_user["plan"] if db_user else "free"
-
-    await call.answer("🧩 Генерирую серию из 5 мемов…")
-    status = await call.message.answer("🧩 Генерирую серию из 5 мемов, подожди…")
-
-    for i in range(5):
-        seed = random.randint(1, 999999)
-        await _generate_and_send(
-            bot=bot,
-            chat_id=call.message.chat.id,
-            user_id=user_id,
-            query=source["query"],
-            style_key=source["style"],
-            plan=plan,
-            seed=seed,
-        )
-        if i == 0:
-            try:
-                await status.delete()
-            except Exception:
-                pass
-
 
 # ── favorite ───────────────────────────────────────────────────────────────
 

@@ -31,8 +31,7 @@ def meme_actions_kb(meme_id: int, is_favorite: bool = False) -> InlineKeyboardMa
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🔁 Ещё 1", callback_data=f"regen:1:{meme_id}"),
          InlineKeyboardButton(text="✏️ Изменить идею", callback_data=f"edit_idea:{meme_id}")],
-        [InlineKeyboardButton(text="🧩 Серия из 5", callback_data=f"series:{meme_id}"),
-         InlineKeyboardButton(text=fav_text, callback_data=f"fav:{meme_id}")],
+        [InlineKeyboardButton(text=fav_text, callback_data=f"fav:{meme_id}")],
         [InlineKeyboardButton(text="📤 Поделиться", callback_data=f"share:{meme_id}"),
          InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{meme_id}")],
         [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")],
