@@ -25,16 +25,36 @@ STYLE_HINTS = {
 }
 
 
-async def generate_caption(query: str, style: str) -> str:
+async def _web_search_context(query: str) -> str:
+    """Use OpenAI web search to find funny/trending context for the meme topic."""
+    try:
+        resp = await _get_client().responses.create(
+            model="gpt-4o-mini-search-preview",
+            tools=[{"type": "web_search_preview"}],
+            input=(
+                f"Найди смешные, актуальные и вирусные шутки, мемы или ситуации по теме: «{query}». "
+                "Дай краткий список из 3-5 конкретных смешных фактов, ситуаций или инсайтов, "
+                "которые можно использовать для создания смешного мема. Только суть, без воды."
+            ),
+        )
+        return resp.output_text.strip()
+    except Exception as e:
+        logger.warning("Web search failed: %s", e)
+        return ""
+
+
+async def generate_caption(query: str, style: str, context: str = "") -> str:
     """Short funny Russian meme caption."""
     hint = STYLE_HINTS.get(style, "")
+    context_block = f"\n\nАктуальный контекст из интернета:\n{context}" if context else ""
     system = (
         "Ты генератор подписей для мемов. "
         "Отвечай ТОЛЬКО текстом подписи — без кавычек, без объяснений, без эмодзи. "
         "Подпись короткая: 1-2 строки, максимум 80 символов. "
-        "Язык: русский. Стиль: смешно, метко, по теме."
+        "Используй актуальный контекст чтобы сделать подпись максимально смешной и точной. "
+        "Язык: русский. Стиль: смешно, метко, злободневно."
     )
-    user = f"Тема мема: «{query}». Стиль: {hint}. Придумай подпись."
+    user = f"Тема мема: «{query}». Стиль: {hint}.{context_block}\n\nПридумай подпись."
 
     try:
         resp = await _get_client().chat.completions.create(
@@ -89,16 +109,18 @@ _STYLE_FLAVORS = [
 ]
 
 
-async def generate_image_prompt(query: str, style: str) -> str:
+async def generate_image_prompt(query: str, style: str, context: str = "") -> str:
     """Generate a varied, creative English image prompt."""
     hint = STYLE_HINTS.get(style, "")
     scene = random.choice(_SCENE_FLAVORS)
     visual_style = random.choice(_STYLE_FLAVORS)
+    context_block = f" Context from web for inspiration: {context[:300]}" if context else ""
 
     system = (
         "You write creative image prompts for an AI image generator that makes meme visuals. "
         "Be BOLD, UNEXPECTED and VARIED. Never default to cute animals or animals in suits — "
         "prefer humans, objects, surreal scenarios, pop-culture nods, absurd juxtapositions. "
+        "Use any web context provided to make the scene more topical and relatable. "
         "Each prompt must feel different from typical AI slop. Surprise the viewer. "
         "Describe ONE vivid scene: subject, expression/action, setting, lighting, composition, mood. "
         "STRICT: no 'meme', 'text', 'caption', 'font', 'write', 'word', 'letter', 'sign'. "
@@ -106,7 +128,7 @@ async def generate_image_prompt(query: str, style: str) -> str:
         "Write in English. Max 70 words. No lists, single paragraph."
     )
     user = (
-        f"Topic (Russian): «{query}». Humor style: {hint}. "
+        f"Topic (Russian): «{query}». Humor style: {hint}.{context_block} "
         f"Base the scene on this direction: {scene}. Visual style: {visual_style}. "
         f"But feel free to twist it into something more surprising. Describe the scene."
     )

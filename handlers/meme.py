@@ -17,7 +17,7 @@ from utils.content_filter import is_blocked
 from utils.keyboards import meme_actions_kb, main_menu_kb
 from utils.prompt_builder import build_prompt, prompt_hash
 from utils.text_overlay import add_caption
-from utils.caption_generator import generate_caption, generate_image_prompt
+from utils.caption_generator import generate_caption, generate_image_prompt, _web_search_context
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -91,9 +91,10 @@ async def _generate_and_send(
     anim_task = asyncio.create_task(_animate_status(status_message, stop_event)) if status_message else None
 
     try:
+        context = await _web_search_context(query)
         image_prompt, caption = await asyncio.gather(
-            generate_image_prompt(query, style_key),
-            generate_caption(query, style_key),
+            generate_image_prompt(query, style_key, context),
+            generate_caption(query, style_key, context),
         )
         raw_bytes = await image_provider.generate_image(
             prompt=image_prompt, seed=used_seed, quality=quality
@@ -347,10 +348,14 @@ async def handle_cancel(call: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "main_menu")
 async def handle_main_menu(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await call.message.edit_text(
-        "🏠 Главное меню",
-        reply_markup=main_menu_kb(),
-    )
+    try:
+        await call.message.edit_text("🏠 Главное меню", reply_markup=main_menu_kb())
+    except Exception:
+        try:
+            await call.message.delete()
+        except Exception:
+            pass
+        await call.message.answer("🏠 Главное меню", reply_markup=main_menu_kb())
     await call.answer()
 
 
