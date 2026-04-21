@@ -46,11 +46,18 @@ class ImageProvider:
                     prompt=prompt,
                     n=1,
                     size=size,
-                    response_format="b64_json",
                     quality=oai_quality,
+                    output_format="png",
                 )
-                b64 = resp.data[0].b64_json
-                return base64.b64decode(b64)
+                item = resp.data[0]
+                if item.b64_json:
+                    return base64.b64decode(item.b64_json)
+                # fallback: download from url
+                import httpx
+                async with httpx.AsyncClient(timeout=60) as hc:
+                    r = await hc.get(item.url)
+                    r.raise_for_status()
+                    return r.content
             except Exception as e:
                 last_error = e
                 logger.warning("OpenAI image error attempt %d/%d: %s", attempt + 1, config.retries + 1, e)

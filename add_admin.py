@@ -7,18 +7,14 @@ def run(cmd):
     _, o, e = c.exec_command(cmd)
     out = o.read().decode("utf-8", errors="replace")
     if out.strip(): print(out.rstrip())
+
 sftp = c.open_sftp()
-for local, remote in [
-    ("handlers/meme.py",           "/opt/meme_bot/handlers/meme.py"),
-    ("providers/image_provider.py","/opt/meme_bot/providers/image_provider.py"),
-    ("config.py",                  "/opt/meme_bot/config.py"),
-]:
-    sftp.put(local, remote)
-    print(f"uploaded {remote}")
+sftp.put("providers/image_provider.py", "/opt/meme_bot/providers/image_provider.py")
+print("uploaded image_provider.py")
 sftp.close()
-run("sed -i 's|IMAGE_MODEL=.*|IMAGE_MODEL=gpt-image-1.5|' /opt/meme_bot/.env")
-run("grep IMAGE_MODEL /opt/meme_bot/.env")
-run("/opt/meme_bot/venv/bin/pip install -q --upgrade openai")
+
+run("sed -i 's|ADMIN_IDS=.*|ADMIN_IDS=1106469742,1143899559|' /opt/meme_bot/.env")
+run("grep ADMIN_IDS /opt/meme_bot/.env")
 run("systemctl restart meme_bot")
 time.sleep(4)
 run("systemctl status meme_bot --no-pager")
